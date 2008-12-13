@@ -4,8 +4,9 @@ package PMTidy::CodeBlock;
 use warnings;
 use strict;
 
+#use lib             qw{/home/justin/src/PMTidy};
+
 use HTML::Entities  qw{decode_entities};
-#use Digest::MD5     qw{md5hex};
 use Perl::Tidy;
 use Carp            qw{carp croak confess};
 
@@ -37,6 +38,7 @@ sub _prepare_code
 
     $$dest = $$source;
     $$dest =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg; # from URI::Encode
+
     decode_entities($$dest);
 
 #    if (uc $tag eq 'P') {
@@ -499,7 +501,7 @@ sub _cache_results
     my ($dbh, $md5) = @{$self}{'dbh', 'md5'};
     confess "MD5 digest is missing" unless defined $md5;
 
-    my $sql = 'INSERT INTO pmtidy VALUES (?,?,?)';
+    my $sql = 'INSERT INTO pmtidy (md5, tidycode, hilitecode) VALUES (?,?,?)';
     $dbh->do( $sql, undef, $md5, @{$self}{'tidycode', 'hilitecode'} )
         or warn "error caching result into DB: ${\$dbh->errstr}";
 
@@ -562,6 +564,8 @@ my $cgi       = new CGI;
 my $code      = $cgi->param('code');
 my $tag       = $cgi->param('tag');
 
+$tag = '' unless defined $tag;
+
 eval {
     die 'No code given' unless(defined $code);
 
@@ -573,21 +577,38 @@ eval {
 
     $codeblock->force_whitespace if ( lc($tag) eq 'p' );
 
-    print $cgi->header, <<"ENDHTML";
-<html>
-<div id=\"highlight\">
+    print $cgi->header('-content-type' => 'text/xml; charset=ISO-8859-1'),
+        <<"ENDXML";
+<?xml version="1.0" ?>
+<pmtidy>
+<status>success</status>
+<hilitecode>
+
+<![CDATA[
 ${$codeblock->hilited()}
-</div>
-<div id=\"tidy\">
+]]>
+
+</hilitecode>
+<tidycode>
+
+<![CDATA[
 ${$codeblock->tidied()}
-</div>
-</html>
-ENDHTML
+]]>
+
+</tidycode>
+</pmtidy>
+ENDXML
+
 };
 
 if ($@) {
     if( $@ =~ /^Not perl code/ ) {
-        print $cgi->header, UNPERLMSG;
+        print $cgi->header('-content-type' => 'text/xml; charset=ISO-8859-1'), <<ENDXML;
+<?xml version="1.0" ?>
+<pmtidy>
+<status>failure</status>
+</pmtidy>
+ENDXML
     }
     else {
         print $cgi->header(-status => 500), $@;
