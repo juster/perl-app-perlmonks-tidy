@@ -4,8 +4,6 @@ package PMTidy::CodeBlock;
 use warnings;
 use strict;
 
-#use lib             qw{/home/justin/src/PMTidy};
-
 use HTML::Entities  qw{decode_entities};
 use Perl::Tidy;
 use Carp            qw{carp croak confess};
