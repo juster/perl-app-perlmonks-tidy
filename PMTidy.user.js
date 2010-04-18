@@ -9,19 +9,20 @@
  * Inspired by and started from Jon Allen's AJAX perl highlighter:
  * Project website: http://perl.jonallen.info/projects/syntaxhighlighting
  *-----------------------------------------------------------------------------
- * ==UserScript==
- * @name           PerlMonks Code Tidier
- * @namespace      http://www.perlmonks.com/?node=juster
- * @description    Highlights/reformats code blocks using AJAX and PerlTidy.
- * @include        http://www.perlmonks.com/*
- * @include        http://www.perlmonks.org/*
- * @include        http://perlmonks.com/*
- * @include        http://perlmonks.org/*
- * ==/UserScript==
  */
 
+// ==UserScript==
+// @name           PerlMonks Code Tidier
+// @namespace      http://www.perlmonks.com/?node=juster
+// @description    Highlights/reformats code blocks using AJAX and PerlTidy.
+// @include        http://www.perlmonks.com/*
+// @include        http://www.perlmonks.org/*
+// @include        http://perlmonks.com/*
+// @include        http://perlmonks.org/*
+// ==/UserScript==
+
 const PMTIDY_AGENT   = 'PerlMonksHighlight';
-const PMTIDY_VERSION = '1.4.1';
+const PMTIDY_VERSION = '1.4.2';
 const PMTIDY_CGI_URL = 'http://juster.info/perl/pmtidy/pmtidy-1.3.pl';
 const UNPERLMSG      = 'How very unperlish of you!';
 
@@ -89,7 +90,7 @@ function TidyCode( codeText, idNumber )
         // <div>/<span> between their <p>/<pre> and <tt> tags.
         case 'DIV':
         case 'SPAN':
-            if( className != 'codeblock' ) {
+            if ( className != 'codeblock' ) {
                 GM_log( 'Error: Enclosing '+tagName+' tag is '+
                         'not of the codeblock class, as expected.' );
                 return false;
@@ -100,7 +101,7 @@ function TidyCode( codeText, idNumber )
         // This is what we are trying to reach, the outermost "code" class tag.
         case 'P':
         case 'PRE':
-            if( className != 'code' ) {
+            if ( className != 'code' ) {
                 GM_log( 'Error: Enclosing '+tagName+' tag is '+
                         'not of the code class, as expected.' );
                 return false;
@@ -114,7 +115,7 @@ function TidyCode( codeText, idNumber )
             return false;
         }
 
-        // RECURSE
+        // Recurse to the parent node.
         return findElements( anscestorNode.parentNode );
     }
 
@@ -122,13 +123,13 @@ function TidyCode( codeText, idNumber )
     function updateLinks()
     {
         // Creates an event handler function
-        function makeHandler ( codeNum ) {
+        function makeLinkHandler ( codeNum ) {
             return function ( event ) { self.setDisplay(codeNum); };
         };
 
         var i;
         var ourLink;
-        while ( (ourLink = linkElems.pop()) ) {
+        while (( ourLink = linkElems.pop() ))  {
             dlElem.removeChild(ourLink);
         }
 
@@ -137,7 +138,7 @@ function TidyCode( codeText, idNumber )
             // next to the [download] link.
 
             var message;
-            switch( dispStatus ) {
+            switch ( dispStatus ) {
             case CODE_ERR_SYNTAX: message = 'skipped';     break;
             case CODE_ERR_CGI:    message = 'cgi error';   break;
             default:              message = 'unknown err'; break;
@@ -151,7 +152,7 @@ function TidyCode( codeText, idNumber )
             return;
         }
 
-        var name, link, funcBody, handler;
+        var name, link;
         var linkNames = [ 'plain', 'hilite', 'tidy' ];
         for ( i = 0 ; i < linkNames.length ; ++i ) {
             name = linkNames[i];
@@ -159,10 +160,8 @@ function TidyCode( codeText, idNumber )
             link = document.createElement( dispStatus == i ? 'span' : 'a' );
 
             if ( dispStatus != i ) {
-//                 funcBody  = 'self.setDisplay('+i+');';
-//                 handler   = new Function('event', funcBody);
                 link.href ="javascript:void(0);";
-                link.addEventListener('click', makeHandler(i), true);
+                link.addEventListener( 'click', makeLinkHandler(i), true );
             }
             link.appendChild( document.createTextNode('['+name+']') );
 
@@ -216,8 +215,6 @@ function TidyCode( codeText, idNumber )
                                        responseDetails.responseText);
             tidyExtract = extractHTML( 'tidy',
                                        responseDetails.responseText);
-            //GM_log(hiExtract);
-            //GM_log(tidyExtract);
             if ( !hiExtract || !tidyExtract ) {
                 GM_log("Malformed response from perltidy.pl! Script borked?");
                 return;
@@ -243,8 +240,7 @@ function TidyCode( codeText, idNumber )
     // PUBLIC ////////////////////////////////////////////////////////////////
 
     this.setDisplay = function( displayCode ) {
-        GM_log( 'setStatus called with arg='+displayCode );
-        if( dispStatus >= CODE_ERR_START ) return;
+        if ( dispStatus >= CODE_ERR_START ) return;
         dispStatus = displayCode;
         updateCode();
         updateLinks();
@@ -317,13 +313,9 @@ function PerlMonksHighlight() {
         }
     }
 
-    if(codeTexts.length == 0) {
-        //GM_log('Could not find any <tt class="codetext">...</tt> '+
-        //       'tags to tidy');
-        return;
-    }
+    if (codeTexts.length == 0) return;
 
-    for( i = 0; i < codeTexts.length; i++ ) {
+    for ( i = 0; i < codeTexts.length; i++ ) {
         var codeBlock = new TidyCode( codeTexts[i], i );
         TidyCodeBlocks.push(codeBlock);
     }
