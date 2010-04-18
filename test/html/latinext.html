@@ -1,0 +1,35 @@
+<html>
+
+<head>
+<title>Extended ISO-8859 Characters Test</title>
+<script>
+function fillTable() {
+  alert
+  var raw = document.getElementById('raw_chars');
+  raw.innerHTML = 'ÀÁÂÃÄÅàáâãäåÇçÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÑñÙÚÛÜùúûüİÿı';
+
+  var named = document.getElementById('named_entities');
+  named.innerHTML = '&Agrave;&Aacute;&Acirc;&Atilde;&Auml;&Aring;&agrave;&aacute;&acirc;&atilde;&auml;&aring;&Ccedil;&ccedil;&Egrave;&Eacute;&Ecirc;&Euml;&egrave;&eacute;&ecirc;&euml;&Igrave;&Iacute;&Icirc;&Iuml;&igrave;&iacute;&icirc;&iuml;&Ograve;&Oacute;&Ocirc;&Otilde;&Ouml;&Oslash;&ograve;&oacute;&ocirc;&otilde;&ouml;&oslash;&Ntilde;&ntilde;&Ugrave;&Uacute;&Ucirc;&Uuml;&ugrave;&uacute;&ucirc;&uuml;&Yacute;&yuml;&yacute;';
+}
+</script>
+</head>
+
+<body onload="fillTable();">
+  <table>
+    <tr>
+      <th>Raw characters</th>
+      <td>ÀÁÂÃÄÅàáâãäåÇçÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÑñÙÚÛÜùúûüİÿı</td>
+    </tr><tr>
+      <th>Raw characters innerHTML</th>
+      <td id="raw_chars"></td>
+    </tr><tr>
+      <th>Named entities</th>
+      <td>&Agrave;&Aacute;&Acirc;&Atilde;&Auml;&Aring;&agrave;&aacute;&acirc;&atilde;&auml;&aring;&Ccedil;&ccedil;&Egrave;&Eacute;&Ecirc;&Euml;&egrave;&eacute;&ecirc;&euml;&Igrave;&Iacute;&Icirc;&Iuml;&igrave;&iacute;&icirc;&iuml;&Ograve;&Oacute;&Ocirc;&Otilde;&Ouml;&Oslash;&ograve;&oacute;&ocirc;&otilde;&ouml;&oslash;&Ntilde;&ntilde;&Ugrave;&Uacute;&Ucirc;&Uuml;&ugrave;&uacute;&ucirc;&uuml;&Yacute;&yuml;&yacute;</td>
+    </tr><tr>
+      <th>Named entities innerHTML</th>
+      <td id="named_entities"></td>
+    </tr>
+  </table>
+</body>
+
+</html>

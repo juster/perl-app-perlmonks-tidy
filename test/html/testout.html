@@ -1,0 +1,35 @@
+<html>
+<div id="highlight">#!/usr/bin/perl -w
+
+<span class="k">use</span> <span class="w">warnings</span><span class="sc">;</span>
+<span class="k">use</span> <span class="w">strict</span><span class="sc">;</span>
+<span class="k">use</span> <span class="w">LWP</span><span class="sc">;</span>
+<span class="k">use</span> <span class="w">utf8</span><span class="sc">;</span>
+
+<span class="k">my</span> <span class="i">$cgiuri</span> = <span class="q">&#39;http://localhost/~justin/pmtidy.pl&#39;</span><span class="sc">;</span>
+
+
+<span class="k">my</span> <span class="i">$code</span> = <span class="k">do</span> <span class="s">{</span> <span class="k">local</span> <span class="i">$/</span><span class="sc">;</span> &lt;&gt; <span class="s">}</span><span class="sc">;</span>
+
+<span class="k">my</span> <span class="s">(</span><span class="i">$ua</span><span class="cm">,</span> <span class="i">$resp</span><span class="s">)</span> = <span class="s">(</span><span class="w">LWP::UserAgent</span><span class="w">-&gt;new</span><span class="s">)</span><span class="sc">;</span>
+<span class="i">$resp</span> = <span class="i">$ua</span><span class="i">-&gt;post</span><span class="s">(</span><span class="i">$cgiuri</span><span class="cm">,</span> <span class="w">Content</span> <span class="cm">=&gt;</span> <span class="s">{</span> <span class="q">&#39;code&#39;</span> <span class="cm">=&gt;</span> <span class="i">$code</span><span class="cm">,</span> <span class="q">&#39;tag&#39;</span> <span class="cm">=&gt;</span> <span class="q">&#39;p&#39;</span> <span class="s">}</span><span class="s">)</span><span class="sc">;</span>
+<span class="k">print</span> <span class="i">$resp</span><span class="i">-&gt;content</span><span class="sc">;</span>
+<span class="k">print</span> <span class="q">&quot;CODE: ${\$resp-&gt;code}\n&quot;</span><span class="sc">;</span>
+</div>
+<div id="tidy">#!/usr/bin/perl -w
+
+<span class="k">use</span> <span class="w">warnings</span><span class="sc">;</span>
+<span class="k">use</span> <span class="w">strict</span><span class="sc">;</span>
+<span class="k">use</span> <span class="w">LWP</span><span class="sc">;</span>
+<span class="k">use</span> <span class="w">utf8</span><span class="sc">;</span>
+
+<span class="k">my</span> <span class="i">$cgiuri</span> = <span class="q">&#39;http://localhost/~justin/pmtidy.pl&#39;</span><span class="sc">;</span>
+
+<span class="k">my</span> <span class="i">$code</span> = <span class="k">do</span> <span class="s">{</span> <span class="k">local</span> <span class="i">$/</span><span class="sc">;</span> &lt;&gt; <span class="s">}</span><span class="sc">;</span>
+
+<span class="k">my</span> <span class="s">(</span> <span class="i">$ua</span><span class="cm">,</span> <span class="i">$resp</span> <span class="s">)</span> = <span class="s">(</span> <span class="w">LWP::UserAgent</span><span class="w">-&gt;new</span> <span class="s">)</span><span class="sc">;</span>
+<span class="i">$resp</span> = <span class="i">$ua</span><span class="i">-&gt;post</span><span class="s">(</span> <span class="i">$cgiuri</span><span class="cm">,</span> <span class="w">Content</span> <span class="cm">=&gt;</span> <span class="s">{</span> <span class="q">&#39;code&#39;</span> <span class="cm">=&gt;</span> <span class="i">$code</span><span class="cm">,</span> <span class="q">&#39;tag&#39;</span> <span class="cm">=&gt;</span> <span class="q">&#39;p&#39;</span> <span class="s">}</span> <span class="s">)</span><span class="sc">;</span>
+<span class="k">print</span> <span class="i">$resp</span><span class="i">-&gt;content</span><span class="sc">;</span>
+<span class="k">print</span> <span class="q">&quot;CODE: ${\$resp-&gt;code}\n&quot;</span><span class="sc">;</span>
+</div>
+</html>CODE: 200
