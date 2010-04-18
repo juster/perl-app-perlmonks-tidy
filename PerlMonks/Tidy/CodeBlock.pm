@@ -480,10 +480,13 @@ Readonly my $ENDPIPE_EX => 'Pipeline finished early';
         my ($self, $text_ref) = @_;
 
         # &nbsp must be intermixed with spaces because two or more spaces
-        # are truncated to one inside a <p> html tag.
+        # are truncated to one inside a <p> html tag...
+
         $$text_ref =~
-            s!(^ +| {2,})!
-                '&nbsp; ' x (length($1)/2) . (length($1)%2 ? '&nbsp;' : '')!gem;
+            s{ ( ^ [ ]+ |      # Lines starting with spaces
+                   [ ]{2,} ) } # Two or more spaces
+             { '&nbsp; ' x ( length($1) / 2 ) .
+                   ( length($1) % 2 ? '&nbsp;' : '' ) }gexms;
 
         $$text_ref =~ s|\n|<br />\n|g;
 
