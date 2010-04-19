@@ -2,36 +2,27 @@ package PerlMonks::Tidy::CodeBlock;
 use warnings;
 use strict;
 
-use HTML::Entities  qw(decode_entities);
+use HTML::Entities  qw();
 use Perl::Tidy      qw(perltidy);
-use Readonly        qw(Readonly);
 use English         qw(-no_match_vars);
 use Carp            qw(carp croak confess);
 
 our $VERSION = '1.4';
 
-Readonly my $UNPERLMSG  => 'How very unperlish of you!';
-Readonly my $ENDPIPE_EX => 'Pipeline finished early';
+my $UNPERLMSG  => 'How very unperlish of you!';
 
-{# BEGIN Package Scope
+#------------------------------------------------------------------------------
+# PRIVATE MEMBERS (Inside-out Object)
+#------------------------------------------------------------------------------
 
-    # Create an id function
-    require Scalar::Util;
-    *id = \&Scalar::Util::refaddr;
+my (%_code, %_trail_lines, %_wrap;
 
-    ####
-    #### PRIVATE MEMBERS (Inside-out Object)
-    ####
+#------------------------------------------------------------------------------
+# PRIVATE METHODS
+#------------------------------------------------------------------------------
 
-    my (%_code, %_trail_lines, %_wrap,
-        %_pipeline, %_pipestatus);
-
-    ####
-    #### PRIVATE METHODS
-    ####
-
-    #---OBJECT METHOD---
-    # Usage    : my $result = $codeblock->_decode_cgi_param( $code )
+    #---HELPER FUNCTION---
+    # Usage    : my $code = _decode_x-url_encoding( $cgi_params )
     # Params   : $code - String containing 'code' received as CGI parameter.
     #                    This would be x-url-encoded, with HTML entities
     #                    encoded.
@@ -40,15 +31,14 @@ Readonly my $ENDPIPE_EX => 'Pipeline finished early';
     #            wordwrapping.
     #-------------------
 
-    sub _decode_cgi_param
+    sub _decode_x-url_encoding
     {
-        my ($self, $source) = @_;
-        #die unless eval { ref $source eq 'SCALAR' && ref $dest eq 'SCALAR' };
+        my ($source) = @_;
 
         my $dest = $source;
         $dest =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg; # from URI::Encode
 
-        decode_entities($dest);
+        HTML::Entities::decode_entities( $dest );
 
         #if (uc $tag eq 'P') {
         $dest =~ tr{\xA0}{ }; # &nbsp;
@@ -74,7 +64,7 @@ Readonly my $ENDPIPE_EX => 'Pipeline finished early';
 
         my $wrap = $_wrap{id $self};
         if ( $$text_ref =~ m{<font color="red">(.*?)</font>} ) {
-            if ($1 eq '+') {
+            if ( $1 eq '+' ) {
                 # Exlicit word wrapping in Display setting nodelet
                 $$text_ref =~ m{(?:^|\n)(.+?)\n<font color="red">\+</font>};
                 $wrap->{len} = length $1;
@@ -242,15 +232,9 @@ Readonly my $ENDPIPE_EX => 'Pipeline finished early';
         return;
     }
 
-
-    sub _anon_scalar {
-        my $anon_scalar;
-        return \$anon_scalar;
-    }
-
-    ####
-    #### PUBLIC METHODS
-    ####
+#------------------------------------------------------------------------------
+# PUBLIC METHODS
+#------------------------------------------------------------------------------
 
     sub new
     {
@@ -312,46 +296,6 @@ Readonly my $ENDPIPE_EX => 'Pipeline finished early';
         $_pipestatus{$id} = 0;
 
         return $self;
-    }
-
-    sub process_code
-    {
-        my $self = shift;
-        my $id   = $self->id;
-
-        my $methods = $_pipeline{$id};
-        my $start   = $_pipestatus{$id};
-        my $text_ref = \$_code{$id};
-
-        # Filter our code through each step in the pipeline...
-        PIPE_SEGMENT:
-        for my $step_num ( $start .. $#{$methods} ) {
-            my $method_name = $methods->[$step_num];
-
-            eval {
-                $self->$method_name($text_ref);
-            };
-
-            # Allow skipping past the rest of the methods...
-            if ($EVAL_ERROR) {
-                if ( $EVAL_ERROR =~ /^ $ENDPIPE_EX /xms ) {
-                    $_pipestatus{$id} = scalar @$methods;
-                    last PIPE_SEGMENT;
-                }
-
-                croak $EVAL_ERROR;
-            }
-
-            $_pipestatus{$id} = $step_num + 1;
-        }
-
-        return;
-    }
-
-    sub _is_pipedone {
-        my $self = shift;
-        my $id = id $self;
-        return $_pipestatus{$id} == scalar $_pipeline{$id};
     }
 
     sub pipe_toplaintext {
