@@ -1,4 +1,4 @@
-package PerlMonks::Tidy;
+package WWW::PerlMonks::Tidy;
 #use base qw(Exporter);
 
 use Scalar::Util qw(refaddr);
