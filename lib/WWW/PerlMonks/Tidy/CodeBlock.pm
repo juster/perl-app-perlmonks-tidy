@@ -9,7 +9,6 @@ use English         qw(-no_match_vars);
 use Carp            qw();
 
 our $VERSION   = '2.0';
-our $UNPERLMSG = 'How very unperlish of you!';
 
 #------------------------------------------------------------------------------
 # HELPER FUNCTIONS
@@ -121,7 +120,6 @@ sub _insert_word_wraps {
 # Params   : $code_ref - A reference to the code.
 #            $tidyargs - Arguments, just like the perltidy commandline.
 # Purpose  : Perl::Tidy wrapper that captures error messages.
-# Throws   : $UNPERLMSG if perltidy displayed errors (usually syntax).
 #-------------------
 sub _perltidy
 {
@@ -321,17 +319,21 @@ sub _force_whitespace {
 
 sub new
 {
-    Carp::croak 'Invalid arguments to new' if @_ < 2;
-    my ($class, $text, $force_ws) = @_;
+    Carp::croak 'Invalid arguments' if @_ < 2;
+    my ($class, $text) = @_;
 
-    bless { text     => $code,
-            force_ws => $force_ws,
-           }, $class;
+    my $self = bless { }, $class;
+
+    $self->_remove_trailing_nls( \$text );
+    $self->_remove_word_wraps( \$text );
+    $self->{code} = $text;
+
+    return $self;
 }
 
 sub perform
 {
-    my ($self, $action, $force_ws) = @_;
+    my ($self, $action) = @_;
 
     Carp::croak q{Second argument must be "hilite" or "tidy"}
         unless $action eq 'hilite' || $action eq 'tidy';
@@ -341,15 +343,16 @@ sub perform
 
     my $result = $self->{code};
 
-    $self->_remove_trailing_nls( \$result );
-    $self->_remove_word_wraps( \$result );
     $self->_tidy_code( \$result )         if $action eq 'tidy';
     $self->_hilite_code( \$result );
     $self->_redo_word_wraps( \$result )   if $action eq 'hilite';
     $self->_redo_trailing_nls( \$result ) if $action eq 'hilite';
-    $self->_force_whitespace( \$result )  if $force_ws;
 
     return $self->{$action} = $result;
 }
+
+sub tidied  { return shift->perform( 'tidy' )   }
+
+sub hilited { return shift->perform( 'hilite' ) }
 
 1;
