@@ -1,20 +1,19 @@
-package WWW::PerlMonks::Tidy;
-#use base qw(Exporter);
+package App::PerlMonks::Tidy;
 
 use Scalar::Util qw(refaddr);
 use English      qw(-no_match_vars);
 use Carp         qw(carp croak);
 
-use WWW::PerlMonks::Tidy::CodeBlock;
+use App::PerlMonks::Tidy::CodeBlock;
+use App::PerlMonks::Tidy::Client;
 
-sub new
-{
-    my $class  = shift;
+sub CLIENT_INPUT_MAX() { 1_048_576 }; # One megabyte
 
-    bless { }, $class;
-}
+#-----------------------------------------------------------------------------
+# PRIVATE METHOD
+#-----------------------------------------------------------------------------
 
-#---PUBLIC FUNCTION---
+#---PRIVATE FUNCTION---
 # Usage    : my $code = decode_x-url_encoding( $cgi_params )
 # Params   : $code - String containing 'code' received as CGI parameter.
 #                    This would be x-url-encoded, with HTML entities
@@ -23,7 +22,7 @@ sub new
 #            in the code should be optional <font> tags used with the
 #            wordwrapping.
 #-------------------
-sub decode_x-url_encoding
+sub _decode_x-url_encoding
 {
     my ($source) = @_;
 
@@ -40,7 +39,7 @@ sub decode_x-url_encoding
     return $dest;
 }
 
-sub force_html_whitespace {
+sub _force_html_whitespace {
     my ($self, $html) = @_;
 
     # &nbsp must be intermixed with spaces because two or more spaces
@@ -55,4 +54,82 @@ sub force_html_whitespace {
     return $html;
 }
 
+#-----------------------------------------------------------------------------
+# PUBLIC METHODS
+#-----------------------------------------------------------------------------
+
+sub new
+{
+    my ($class, $psgi_req) = @_;
+
+
+    my $input_obj = $psgi_req->{'psgi.input'};
+    my $post_data;
+
+    my $read_count = $input_obj->read( $post_data, CLIENT_INPUT_MAX )
+        or die 'Invalid client input';
+
+    my $client = App::PerlMonks::Tidy::Client->new
+        ( $psgi_req->{'HTTP_USER_AGENT'} );
+    
+    bless { 'post_data' => $post_data,
+            'client'    => $client,
+           }, $class;
+}
+
+sub response
+{
+    my ($self) = @_;
+
+    my $block_obj;
+    my $compat_mode = $self->{'client'}->wants_html;
+
+    # Old-fashioned compatible mode.
+    if ( $compat_mode ) {
+        my %params = split /=/, split /[;&]/ $self->{'post_data'};
+
+        my $code = $params{'code'}
+            or die q{'code' parameter is missing};
+        $code    = _decode_x-url_encoding( $code );
+
+        my $tag = $params{'tag'}
+            or die q{'tag' parameters is missing};
+
+        my $block_obj = App::PerlMonks::Tidy::CodeBlock->new( $code );
+
+        my $hilited = $block_obj->hilited();
+        my $tidied  = $block_obj->tidied();
+
+        if ( $tag eq 'P' ) {
+            $hilited = _force_html_whitespace( $hilited );
+            $tidied  = _force_html_whitespace( $tidied );
+        }
+
+        my $html = <<"END_HTML";
+<html>
+<div id="highlight">
+${$block_obj->hilited()}
+</div>
+<div id="tidy">
+${$block_obj->tidied()}
+</div>
+</html>
+END_HTML
+        return [ '200', 
+                 [ 'Content-Type' => 'text/html' ],
+                 [ $html ]
+                ];
+    }
+    else {
+        # TODO: the new and improved XML version!
+        return [ '500',
+                 [ 'Content-Type' => 'text/plain' ],
+                 [ 'ERROR: Unimplemented' ]
+                ];
+                 
+    }
+}
+
 1;
+
+
