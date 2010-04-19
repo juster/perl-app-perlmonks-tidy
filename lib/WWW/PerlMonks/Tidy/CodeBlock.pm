@@ -298,21 +298,6 @@ sub _redo_trailing_nls
     return;
 }
 
-sub _force_whitespace {
-    my ($self, $code_ref) = @_;
-
-    # &nbsp must be intermixed with spaces because two or more spaces
-    # are truncated to one inside a <p> html tag...
-
-    $$code =~ s{ ( ^ [ ]+ |      # Lines starting with spaces
-                     [ ]{2,} ) } # Two or more spaces
-               { '&nbsp; ' x ( length($1) / 2 ) .
-                     ( length($1) % 2 ? '&nbsp;' : '' ) }gexms;
-    $$code =~ s{\n}{<br />\n}g;
-
-    return;
-}
-
 #------------------------------------------------------------------------------
 # PUBLIC METHODS
 #------------------------------------------------------------------------------
