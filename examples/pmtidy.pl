@@ -72,7 +72,8 @@ sub print_sourcecode
 
     my $code_tags = join "\n",
         map { sprintf $RESP_FMT_CODE, $_ }
-            ( ${$codeblock->hilited()}, ${$codeblock->tidied()} );
+            ( ${ $codeblock->hilited() },
+              ${ $codeblock->tidied()  } );
     printf $RESP_FMT_14, 'success', $code_tags;
 
     return;
