@@ -10,7 +10,7 @@ my $agent = 'PerlMonksHighlight/1.4';
 
 my $code = do { local $/; <> };
 
-my ($ua, $resp) = (LWP::UserAgent->new( agent => $agent );
+my ($ua, $resp) = LWP::UserAgent->new( agent => $agent );
 $resp = $ua->post($cgiuri, Content => { 'code' => $code, 'tag' => 'P' });
 print map { "$_ = ".$resp->header($_)."\n"; } $resp->header_field_names;
 print $resp->content;

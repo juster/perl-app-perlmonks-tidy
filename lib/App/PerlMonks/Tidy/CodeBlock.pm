@@ -1,4 +1,4 @@
-package WWW::PerlMonks::Tidy::CodeBlock;
+package App::PerlMonks::Tidy::CodeBlock;
 
 use warnings;
 use strict;
@@ -254,7 +254,7 @@ sub _hilite_code {
 
 sub _redo_word_wraps
 {
-    my ($self, $code) = @_;
+    my ($self, $code_ref) = @_;
 
     Carp::confess "_remove_word_wraps must be called before _redo_word_wraps"
         unless defined $self->{wrap};
@@ -262,17 +262,17 @@ sub _redo_word_wraps
     my $wrap = $self->{wrap};
 
     if ( $wrap->{mode} eq 'normal' && defined $wrap->{len} ) {
-        $code =~ m{(\n)+$};
+        $$code_ref =~ m{(\n)+$};
         my $lostnewlines = $1;
 
-        my @codelines = split /\n/, $code;
+        my @codelines = split /\n/, $$code_ref;
         $self->_insert_word_wraps( $wrap->{lines}, \@codelines,
                                    $wrap->{len} );
-        $code = join "\n", @codelines;
-        $code .= $lostnewlines;
+        $$code_ref = join "\n", @codelines;
+        $$code_ref .= $lostnewlines;
     }
 
-    return $code;
+    return;
 }
 
 #---PRIVATE METHOD---
@@ -283,8 +283,7 @@ sub _redo_trailing_nls
     Carp::croak 'Code text argument must be a scalar reference'
         unless eval { ref $text_ref eq 'SCALAR' };
 
-    my $trail_lines = $self->{trailing_NLs}
-        or die;
+    my $trail_lines = $self->{trailing_NLs};
 
     # If input has no trailing newline, perltidy appends one.
     # If input has 1 or more, perltidy appends only one.

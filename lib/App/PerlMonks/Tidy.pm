@@ -6,8 +6,7 @@ use Carp         qw(carp croak);
 
 use App::PerlMonks::Tidy::CodeBlock;
 use App::PerlMonks::Tidy::Client;
-
-sub CLIENT_INPUT_MAX() { 1_048_576 }; # One megabyte
+use Peu;
 
 #-----------------------------------------------------------------------------
 # PRIVATE METHOD
@@ -22,7 +21,7 @@ sub CLIENT_INPUT_MAX() { 1_048_576 }; # One megabyte
 #            in the code should be optional <font> tags used with the
 #            wordwrapping.
 #-------------------
-sub _decode_x-url_encoding
+sub _decode_xurl_encoding
 {
     my ($source) = @_;
 
@@ -40,96 +39,52 @@ sub _decode_x-url_encoding
 }
 
 sub _force_html_whitespace {
-    my ($self, $html) = @_;
+    my ($self, $html_ref) = @_;
 
     # &nbsp must be intermixed with spaces because two or more spaces
     # are truncated to one inside a <p> html tag...
 
-    $html =~ s{ ( ^ [ ]+ |      # Lines starting with spaces
-                     [ ]{2,} ) } # Two or more spaces
-               { '&nbsp; ' x ( length($1) / 2 ) .
-                     ( length($1) % 2 ? '&nbsp;' : '' ) }gexms;
-    $html =~ s{\n}{<br />\n}g;
-
-    return $html;
+    $$html_ref =~ s{ ( ^ [ ]+ |      # Lines starting with spaces
+                         [ ]{2,} ) } # Two or more spaces
+                   { '&nbsp; ' x ( length($1) / 2 ) .
+                         ( length($1) % 2 ? '&nbsp;' : '' ) }gexms;
+    $$html_ref =~ s{\n}{<br />\n}g;
 }
 
-#-----------------------------------------------------------------------------
-# PUBLIC METHODS
-#-----------------------------------------------------------------------------
-
-sub new
-{
-    my ($class, $psgi_req) = @_;
-
-
-    my $input_obj = $psgi_req->{'psgi.input'};
-    my $post_data;
-
-    my $read_count = $input_obj->read( $post_data, CLIENT_INPUT_MAX )
-        or die 'Invalid client input';
-
-    my $client = App::PerlMonks::Tidy::Client->new
-        ( $psgi_req->{'HTTP_USER_AGENT'} );
+# This is our old URL
+any '/pmtidy-1.3.pl' => sub {
+    my $client = App::PerlMonks::Tidy::Client->new( $Req->user_agent );
     
-    bless { 'post_data' => $post_data,
-            'client'    => $client,
-           }, $class;
-}
+    my $code = $Req->param('code')
+        or return ( 500, { 'Content-Type' => 'text/plain' },
+                    '500 Invalid Input' );
 
-sub response
-{
-    my ($self) = @_;
+    my $tag = $Req->param('tag')
+        or return ( 500, { 'Content-Type' => 'text/plain' },
+                    '500 Invalid Input' );
 
-    my $block_obj;
-    my $compat_mode = $self->{'client'}->wants_html;
+    $code = _decode_xurl_encoding( $code );
 
-    # Old-fashioned compatible mode.
-    if ( $compat_mode ) {
-        my %params = split /=/, split /[;&]/ $self->{'post_data'};
+    my $block_obj = App::PerlMonks::Tidy::CodeBlock->new( $code );
 
-        my $code = $params{'code'}
-            or die q{'code' parameter is missing};
-        $code    = _decode_x-url_encoding( $code );
+    my $hilited = $block_obj->hilited();
+    my $tidied  = $block_obj->tidied();
 
-        my $tag = $params{'tag'}
-            or die q{'tag' parameters is missing};
+    if ( $tag eq 'P' ) {
+        _force_html_whitespace( \$hilited );
+        _force_html_whitespace( \$tidied );
+    }
 
-        my $block_obj = App::PerlMonks::Tidy::CodeBlock->new( $code );
-
-        my $hilited = $block_obj->hilited();
-        my $tidied  = $block_obj->tidied();
-
-        if ( $tag eq 'P' ) {
-            $hilited = _force_html_whitespace( $hilited );
-            $tidied  = _force_html_whitespace( $tidied );
-        }
-
-        my $html = <<"END_HTML";
+    return <<"END_HTML";
 <html>
 <div id="highlight">
-${$block_obj->hilited()}
+$hilited
 </div>
 <div id="tidy">
-${$block_obj->tidied()}
+$tidied
 </div>
 </html>
 END_HTML
-        return [ '200', 
-                 [ 'Content-Type' => 'text/html' ],
-                 [ $html ]
-                ];
-    }
-    else {
-        # TODO: the new and improved XML version!
-        return [ '500',
-                 [ 'Content-Type' => 'text/plain' ],
-                 [ 'ERROR: Unimplemented' ]
-                ];
-                 
-    }
-}
+};
 
 1;
-
-
