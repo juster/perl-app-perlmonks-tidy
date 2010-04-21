@@ -145,7 +145,7 @@ sub _perltidy
     close $tmpstderr;
 
     # XXX: Maybe another custom message should be here
-    confess $errors if $errors;
+    die "Perl::Tidy error:\n$errors" if $errors;
 
     $$code_ref = $dest;
     return;

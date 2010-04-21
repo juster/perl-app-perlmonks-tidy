@@ -8,6 +8,8 @@ use App::PerlMonks::Tidy::CodeBlock;
 use App::PerlMonks::Tidy::Client;
 use Peu;
 
+our $VERSION = '0.01';
+
 #-----------------------------------------------------------------------------
 # PRIVATE METHOD
 #-----------------------------------------------------------------------------
@@ -67,8 +69,16 @@ any '/pmtidy-1.3.pl' => sub {
 
     my $block_obj = App::PerlMonks::Tidy::CodeBlock->new( $code );
 
-    my $hilited = $block_obj->hilited();
-    my $tidied  = $block_obj->tidied();
+    my ($hilited, $tidied);
+    eval {
+        $hilited = $block_obj->hilited();
+        $tidied  = $block_obj->tidied();
+    };
+
+    if ( $@ ) {
+        die unless $@ =~ /^Perl::Tidy error:/;
+        return 'How very unperlish of you!';
+    }
 
     if ( $tag eq 'P' ) {
         _force_html_whitespace( \$hilited );
@@ -77,12 +87,8 @@ any '/pmtidy-1.3.pl' => sub {
 
     return <<"END_HTML";
 <html>
-<div id="highlight">
-$hilited
-</div>
-<div id="tidy">
-$tidied
-</div>
+<div id="highlight">$hilited</div>
+<div id="tidy">$tidied</div>
 </html>
 END_HTML
 };
