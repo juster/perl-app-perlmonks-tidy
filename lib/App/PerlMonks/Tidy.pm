@@ -53,17 +53,22 @@ sub _force_html_whitespace {
     $$html_ref =~ s{\n}{<br />\n}g;
 }
 
-# This is our old URL
-any '/pmtidy-1.3.pl' => sub {
-    my $client = App::PerlMonks::Tidy::Client->new( $Req->user_agent );
-    
-    my $code = $Req->param('code')
-        or return ( 500, { 'Content-Type' => 'text/plain' },
-                    '500 Invalid Input' );
+# Use Plack::Middleware::Static <3
+MID 'static' => ( 'path' => qr/[.](html|css|js|png|gz)/,
+                  'root' => '/srv/http/juster.info/public/perl/pmtidy' );
 
-    my $tag = $Req->param('tag')
-        or return ( 500, { 'Content-Type' => 'text/plain' },
-                    '500 Invalid Input' );
+ANY '/' => sub { SLURP '../public/perl/pmtidy/index.html' };
+
+# This is our old URL
+ANY '/pmtidy-1.3.pl' => sub {
+    my $code = $Req->param('code');
+    my $tag  = $Req->param('tag');
+
+    if ( !$code || !$tag ) {
+        $Res->code( 500 );
+        $Res->content_type( 'text/plain' );
+        return '500 Invalid Input';
+    }
 
     $code = _decode_xurl_encoding( $code );
 
