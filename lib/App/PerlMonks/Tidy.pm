@@ -1,5 +1,8 @@
 package App::PerlMonks::Tidy;
 
+use warnings;
+use strict;
+
 use Scalar::Util qw(refaddr);
 use English      qw(-no_match_vars);
 use Carp         qw(carp croak);
@@ -41,7 +44,7 @@ sub _decode_xurl_encoding
 }
 
 sub _force_html_whitespace {
-    my ($self, $html_ref) = @_;
+    my ($html_ref) = @_;
 
     # &nbsp must be intermixed with spaces because two or more spaces
     # are truncated to one inside a <p> html tag...
@@ -85,7 +88,7 @@ ANY '/pmtidy-1.3.pl' => sub {
         return 'How very unperlish of you!';
     }
 
-    if ( $tag eq 'P' ) {
+    if ( uc $tag eq 'P' ) {
         _force_html_whitespace( \$hilited );
         _force_html_whitespace( \$tidied );
     }
