@@ -27,9 +27,10 @@ our $VERSION   = '2.0';
 
 sub _find_word_wraps
 {
-    my ($lines_ref) = @_;
+    my ($lines_ref)      = @_;
     my ($joined, %found) = 0;
-    for my $i ( 0 .. scalar(@$lines_ref) - 1 ) {
+
+    for my $i ( 0 .. $#$lines_ref ) {
         if ( $lines_ref->[$i] =~ m{ ^ <font color="red">
                                     [+] </font>}xms ) {
             $found{$i-1 - $joined++} = 1;
@@ -37,6 +38,7 @@ sub _find_word_wraps
             # to the previous line, hence $joined.
         }
     }
+
     return [ sort { $a <=> $b } keys %found ];
 }
 
