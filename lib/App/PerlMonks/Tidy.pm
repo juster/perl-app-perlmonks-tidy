@@ -3,15 +3,17 @@ package App::PerlMonks::Tidy;
 use warnings;
 use strict;
 
-use Scalar::Util qw(refaddr);
-use English      qw(-no_match_vars);
-use Carp         qw(carp croak);
+use Log::Dispatch qw();
+use Scalar::Util  qw(refaddr);
+use English       qw(-no_match_vars);
+use Carp          qw(carp croak);
 
 use App::PerlMonks::Tidy::CodeBlock;
-use App::PerlMonks::Tidy::Client;
 use Peu;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
+
+my $LOG_PATH = '/srv/http/juster.info/log/pmtidy';
 
 #-----------------------------------------------------------------------------
 # PRIVATE METHOD
@@ -56,6 +58,10 @@ sub _force_html_whitespace {
     $$html_ref =~ s{\n}{<br />\n}g;
 }
 
+my $LOG = Log::Dispatch->new
+    ( outputs => [[ 'File', ( min_level => 'error',
+                              filename  => $LOG_PATH ) ]] );
+
 # Use Plack::Middleware::Static <3
 MID 'static' => ( 'path' => qr/[.](html|css|js|png|gz)/,
                   'root' => '/srv/http/juster.info/public/perl/pmtidy' );
@@ -84,7 +90,12 @@ ANY '/pmtidy-1.3.pl' => sub {
     };
 
     if ( $@ ) {
-        die unless $@ =~ /^Perl::Tidy error:/;
+        unless ( $@ =~ /^Perl::Tidy error:/ ) {
+            my $err = $@;
+            $LOG->error( $err );
+            $@ = $err;
+            die;
+        }
         return 'How very unperlish of you!';
     }
 
