@@ -44,8 +44,8 @@ sub _find_word_wraps
 
 #---HELPER FUNCTION---
 # Usage    : $success = _insert_word_wraps( $linewraps_ref,
-#                                                       $lines_ref,
-#                                                       $linemax )
+#                                           $lines_ref,
+#                                           $linemax )
 # Params   : $linewraps_ref - Arrayref to the results of find_word_wraps
 #            $lines_ref     - Arrayref to the lines of source
 #                             (HTML from perltidy output)
@@ -62,9 +62,9 @@ sub _insert_word_wraps {
 
     LINELOOP:
     for my $wrapline ( @$linewraps_ref ) {
-        my $line = \$lines_ref->[$wrapline];
+        my $line      = \$lines_ref->[$wrapline];
         my $charcount = 0;
-        my @blocks = grep { length; } split /(<\/?span.*?>)/, $$line;
+        my @blocks    = grep { length; } split /(<\/?span.*?>)/, $$line;
 
         BLOCKLOOP:
         for my $block (@blocks) {
@@ -185,7 +185,7 @@ sub _remove_word_wraps
 
     if ( $$text_ref =~ m{<font color="red">(.*?)</font>} ) {
         if ( $1 eq '+' ) {
-            # Exlicit word wrapping in Display setting nodelet
+            # Explicit word wrapping in Display setting nodelet
             $$text_ref   =~ m{(?:^|\n)(.+?)\n<font color="red">\+</font>};
             $self->{wrap}{len} = length $1;
 
@@ -245,7 +245,7 @@ sub _hilite_code {
     return;
 }
 
-#---OBJECT METHOD---
+#---PRIVATE METHOD---
 # Usage    : $wrapped_code = $codeblock->_redo_word_wraps( $code )
 # Purpose  : Redo the linewrapping for the hilited version, if
 #            linewrapping is explicitly set in PM's User Settings.
@@ -264,12 +264,12 @@ sub _redo_word_wraps
     my $wrap = $self->{wrap};
 
     if ( $wrap->{mode} eq 'normal' && defined $wrap->{len} ) {
+        
         $$code_ref =~ m{(\n)+$};
         my $lostnewlines = $1;
 
         my @codelines = split /\n/, $$code_ref;
-        $self->_insert_word_wraps( $wrap->{lines}, \@codelines,
-                                   $wrap->{len} );
+        _insert_word_wraps( $wrap->{lines}, \@codelines, $wrap->{len} );
         $$code_ref = join "\n", @codelines;
         $$code_ref .= $lostnewlines;
     }

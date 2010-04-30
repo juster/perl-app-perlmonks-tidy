@@ -13,7 +13,7 @@ use Peu;
 
 our $VERSION = '0.02';
 
-my $LOG_PATH = '/srv/http/juster.info/log/pmtidy';
+my $LOG_PATH = '/srv/http/juster.info/log/pmtidy.err';
 
 #-----------------------------------------------------------------------------
 # PRIVATE METHOD
@@ -60,7 +60,9 @@ sub _force_html_whitespace {
 
 my $LOG = Log::Dispatch->new
     ( outputs => [[ 'File', ( min_level => 'error',
-                              filename  => $LOG_PATH ) ]] );
+                              filename  => $LOG_PATH,
+                              mode      => '>>',
+                             ) ]] );
 
 # Use Plack::Middleware::Static <3
 MID 'static' => ( 'path' => qr/[.](html|css|js|png|gz)/,
@@ -90,13 +92,10 @@ ANY '/pmtidy-1.3.pl' => sub {
     };
 
     if ( $@ ) {
-        unless ( $@ =~ /^Perl::Tidy error:/ ) {
-            my $err = $@;
-            $LOG->error( $err );
-            $@ = $err;
-            die;
-        }
-        return 'How very unperlish of you!';
+        return 'How very unperlish of you!' if ( $@ =~ /^Perl::Tidy error:/ );
+
+        { local $@; $LOG->error( $@ ); }
+        die;
     }
 
     if ( uc $tag eq 'P' ) {
