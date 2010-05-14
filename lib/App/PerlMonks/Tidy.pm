@@ -64,11 +64,13 @@ my $LOG = Log::Dispatch->new
                               mode      => '>>',
                              ) ]] );
 
+my $STATIC_ROOT = '/srv/http/juster.info/public/perl/pmtidy';
+
 # Use Plack::Middleware::Static <3
 MID 'static' => ( 'path' => qr/[.](html|css|js|png|gz)/,
-                  'root' => '/srv/http/juster.info/public/perl/pmtidy' );
+                  'root' => $STATIC_ROOT );
 
-ANY '/' => sub { SLURP '../public/perl/pmtidy/index.html' };
+ANY '/' => sub { SLURP "${STATIC_ROOT}/index.html" };
 
 # This is our old URL
 ANY '/pmtidy-1.3.pl' => sub {
