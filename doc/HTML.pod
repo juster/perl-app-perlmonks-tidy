@@ -1,15 +1,6 @@
-=item tag
-
-The name of the tag that encloses the codeblock. This should be either
-C<PRE> or C<P>.  This is case-insensitive. If tag is C<P>, this tells
-the script to perform more post-processing. C<&nbsp;> entities are
-inserted as well as C<< <br> >> html tags for linebreaks.
-
-=back
-
 =head1 NAME
 
-WWW::PerlMonks::CodeBlock::HTML - PerlMonks code block HTML description.
+PMTidyHTML - PerlMonks code block HTML description.
 
 =head1 DESCRIPTION
 
