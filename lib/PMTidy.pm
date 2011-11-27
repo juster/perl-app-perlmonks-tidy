@@ -1,4 +1,4 @@
-package App::PerlMonks::Tidy;
+package PMTidy;
 
 use warnings;
 use strict;
@@ -8,7 +8,7 @@ use Scalar::Util  qw(refaddr);
 use English       qw(-no_match_vars);
 use Carp          qw(carp croak);
 
-use App::PerlMonks::Tidy::CodeBlock;
+use PMTidy::CodeBlock;
 use Peu;
 
 our $VERSION = '0.02';
@@ -85,7 +85,7 @@ ANY '/pmtidy-1.3.pl' => sub {
 
     $code = _decode_xurl_encoding( $code );
 
-    my $block_obj = App::PerlMonks::Tidy::CodeBlock->new( $code );
+    my $block_obj = PMTidy::CodeBlock->new( $code );
 
     my ($hilited, $tidied);
     eval {

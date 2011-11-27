@@ -1,4 +1,4 @@
-package App::PerlMonks::Tidy::CodeBlock;
+package PMTidy::CodeBlock;
 
 use warnings;
 use strict;

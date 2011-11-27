@@ -1,4 +1,4 @@
-package App::PerlMonks::Tidy::Client;
+package PMTidy::Client;
 
 use warnings;
 use strict;
