@@ -1,26 +1,8 @@
-package PMTidy;
-
-use warnings;
-use strict;
-
-use Log::Dispatch qw();
-use Scalar::Util  qw(refaddr);
-use English       qw(-no_match_vars);
-use Carp          qw(carp croak);
-
+use Mojolicious::Lite;
 use PMTidy::CodeBlock;
-use Peu;
-
-our $VERSION = '0.02';
-
-my $LOG_PATH = '/srv/http/juster.info/log/pmtidy.err';
-
-#-----------------------------------------------------------------------------
-# PRIVATE METHOD
-#-----------------------------------------------------------------------------
 
 #---PRIVATE FUNCTION---
-# Usage    : my $code = decode_x-url_encoding( $cgi_params )
+# Usage    : my $code = decode_xurl( $cgi_params )
 # Params   : $code - String containing 'code' received as CGI parameter.
 #                    This would be x-url-encoded, with HTML entities
 #                    encoded.
@@ -28,7 +10,7 @@ my $LOG_PATH = '/srv/http/juster.info/log/pmtidy.err';
 #            in the code should be optional <font> tags used with the
 #            wordwrapping.
 #-------------------
-sub _decode_xurl_encoding
+sub _decode_xurl
 {
     my ($source) = @_;
 
@@ -45,7 +27,7 @@ sub _decode_xurl_encoding
     return $dest;
 }
 
-sub _force_html_whitespace {
+sub _force_htmlws {
     my ($html_ref) = @_;
 
     # &nbsp must be intermixed with spaces because two or more spaces
@@ -58,22 +40,10 @@ sub _force_html_whitespace {
     $$html_ref =~ s{\n}{<br />\n}g;
 }
 
-my $LOG = Log::Dispatch->new
-    ( outputs => [[ 'File', ( min_level => 'error',
-                              filename  => $LOG_PATH,
-                              mode      => '>>',
-                             ) ]] );
+sub codeblock { new PMTidy::CodeBlock(@_) }
 
-my $STATIC_ROOT = '/srv/http/juster.info/public/perl/pmtidy';
-
-# Use Plack::Middleware::Static <3
-MID 'static' => ( 'path' => qr/[.](html|css|js|png|gz)/,
-                  'root' => $STATIC_ROOT );
-
-ANY '/' => sub { SLURP "${STATIC_ROOT}/index.html" };
-
-# This is our old URL
-ANY '/pmtidy-1.3.pl' => sub {
+get '/pmtidy-1.3.pl' => sub {
+    my $self = shift;
     my $code = $Req->param('code');
     my $tag  = $Req->param('tag');
 
@@ -83,7 +53,7 @@ ANY '/pmtidy-1.3.pl' => sub {
         return '500 Invalid Input';
     }
 
-    $code = _decode_xurl_encoding( $code );
+    $code = _decode_xurl( $code );
 
     my $block_obj = PMTidy::CodeBlock->new( $code );
 
@@ -101,8 +71,8 @@ ANY '/pmtidy-1.3.pl' => sub {
     }
 
     if ( uc $tag eq 'P' ) {
-        _force_html_whitespace( \$hilited );
-        _force_html_whitespace( \$tidied );
+        _force_htmlws( \$hilited );
+        _force_htmlws( \$tidied );
     }
 
     return <<"END_HTML";
