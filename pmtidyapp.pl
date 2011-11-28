@@ -1,86 +1,93 @@
 use Mojolicious::Lite;
-use PMTidy::CodeBlock;
+use HTML::Entities;
+use lib 'lib';
+use CodeBlock;
 
-#---PRIVATE FUNCTION---
-# Usage    : my $code = decode_xurl( $cgi_params )
-# Params   : $code - String containing 'code' received as CGI parameter.
-#                    This would be x-url-encoded, with HTML entities
-#                    encoded.
-# Returns  : The result here _should_ be regular code.  The only HTML
-#            in the code should be optional <font> tags used with the
-#            wordwrapping.
-#-------------------
-sub _decode_xurl
+sub _decodews
 {
-    my ($source) = @_;
+    my ($cr) = @_;
 
-    my $dest = $source;
-    $dest =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg; # from URI::Encode
-
-    HTML::Entities::decode_entities( $dest );
-
-    #if (uc $tag eq 'P') {
-    $dest =~ tr{\xA0}{ };       # &nbsp;
-    $dest =~ s{<br */?>}{}g;
-    #}
-
-    return $dest;
+    decode_entities($$cr);
+    $$cr =~ tr{\xA0}{ }; # &nbsp;
+    $$cr =~ s{<br */?>}{}g;
+    return;
 }
 
-sub _force_htmlws {
-    my ($html_ref) = @_;
-
+sub _forcews
+{
     # &nbsp must be intermixed with spaces because two or more spaces
     # are truncated to one inside a <p> html tag...
 
-    $$html_ref =~ s{ ( ^ [ ]+ |      # Lines starting with spaces
-                         [ ]{2,} ) } # Two or more spaces
-                   { '&nbsp; ' x ( length($1) / 2 ) .
-                         ( length($1) % 2 ? '&nbsp;' : '' ) }gexms;
-    $$html_ref =~ s{\n}{<br />\n}g;
+    s{ ( ^ [ ]+ |      # Lines starting with spaces
+           [ ]{2,} ) } # Two or more spaces
+     { '&nbsp; ' x (length($1) / 2) . (length($1) % 2 ? '&nbsp;' : '') }gexms;
+
+    s{\n}{<br />\n}g;
 }
 
-sub codeblock { new PMTidy::CodeBlock(@_) }
+sub _rmlinenums
+{
+    s{^\d+: }{}gm;
+}
 
-get '/pmtidy-1.3.pl' => sub {
-    my $self = shift;
-    my $code = $Req->param('code');
-    my $tag  = $Req->param('tag');
+get '/' => sub { shift->render_static('index.html') };
 
-    if ( !$code || !$tag ) {
-        $Res->code( 500 );
-        $Res->content_type( 'text/plain' );
-        return '500 Invalid Input';
+post '/' => sub {
+    my $c = shift;
+
+    my $dom = Mojo::DOM->new($c->req->body);
+    my $req = $dom->at('tidyreq');
+    unless($req && $dom->at('tidyreq > code') && $dom->at('tidyreq > tag')){
+        $c->render('text' => "500 Invalid Request\n", 'status' => 500);
+        return;
     }
 
-    $code = _decode_xurl( $code );
+    my $code = $dom->at('tidyreq > code')->text;
+    my $tag  = $dom->at('tidyreq > tag')->text;
+    my $numbered;
 
-    my $block_obj = PMTidy::CodeBlock->new( $code );
+    _decodews(\$code);
+    $numbered = _rmlinenums() for($code);
 
-    my ($hilited, $tidied);
-    eval {
-        $hilited = $block_obj->hilited();
-        $tidied  = $block_obj->tidied();
-    };
-
-    if ( $@ ) {
-        return 'How very unperlish of you!' if ( $@ =~ /^Perl::Tidy error:/ );
-
-        { local $@; $LOG->error( $@ ); }
-        die;
+    my $b = new CodeBlock($code);
+    my($hilited, $tidied);
+    eval { $hilited = $b->hilited(); $tidied  = $b->tidied(); };
+    if($@){
+        my $err = $@;
+        if($err =~ /^Perl::Tidy error:/){
+            $c->app->log->debug($err);
+            $c->stash('errmsg' => $err);
+            $c->render('template' => 'error', format => 'xml');
+            return;
+        }
+        die; # rethrow
     }
 
-    if ( uc $tag eq 'P' ) {
-        _force_htmlws( \$hilited );
-        _force_htmlws( \$tidied );
+    # TODO: move to CodeBlock class?
+    if(uc $tag eq 'P'){
+        _forcews() for($hilited, $tidied);
     }
 
-    return <<"END_HTML";
-<html>
-<div id="highlight">$hilited</div>
-<div id="tidy">$tidied</div>
-</html>
-END_HTML
+    $c->stash('hilited' => $hilited);
+    $c->stash('tidied' => $tidied);
+    $c->render('resp', 'format' => 'xml');
 };
 
-1;
+app->start;
+
+__DATA__
+
+@@ error.xml.ep
+<?xml version="1.0" encoding="UTF-8" ?>
+<tidyresp>
+<error>
+<%= $errmsg %>
+</error>
+</tidyresp>
+
+@@ resp.xml.ep
+<?xml version="1.0" encoding="UTF-8" ?>
+<tidyresp>
+<hilited><![CDATA[<%== $hilited %>]]></hilited>
+<tidied><![CDATA[<%== $tidied %>]]></tidied>
+</tidyresp>

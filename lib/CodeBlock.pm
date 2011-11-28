@@ -1,4 +1,4 @@
-package PMTidy::CodeBlock;
+package CodeBlock;
 
 use warnings;
 use strict;
@@ -7,12 +7,6 @@ use HTML::Entities  qw();
 use Perl::Tidy      qw(perltidy);
 use English         qw(-no_match_vars);
 use Carp            qw();
-
-our $VERSION   = '2.0';
-
-#------------------------------------------------------------------------------
-# HELPER FUNCTIONS
-#------------------------------------------------------------------------------
 
 #---HELPER FUNCTION---
 # Usage    : my $foundlines = _find_word_wraps( \@lines );
