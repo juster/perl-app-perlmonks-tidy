@@ -1,0 +1,125 @@
+<html>
+<head>
+<title>pmtidy</title>
+
+<style type="text/css">
+body  { font-size: 14px; font-family: "Courier New", monospace; width: 750px;}
+.head { font-size: 16px; font-weight: bold; }
+.subhead { font-size: 15px; font-weight: bold; color: #555555; }
+</style>
+
+</head>
+
+<body>
+<h1><a href="/">juster.info</a> / <a href="..">Perl stuff</a> / pmtidy</h1>
+
+<p>
+<a href="#INSTALL">INSTALL</a>
+<a href="#SYNOPSIS">SYNOPSIS</a>
+<a href="#SCREENSHOTS">SCREENSHOTS</a>
+<a href="#CHANGES">CHANGES</a>
+<a href="#TODO">TODO</a>
+<a href="#SUPPORT">SUPPORT</a>
+<a href="#RANT">RANT</a>
+</p>
+
+<span class="head"><a name="INSTALL">INSTALL</a></span>
+
+<p>
+Greasemonkey Userscript Link: <a href="PMTidy-1.5.user.js">PMTidy-1.5.user.js</a>
+</p>
+
+<span class="head"><a name="SYNOPSIS">SYNOPSIS</a></span>
+
+<p>
+The
+<a href="https://addons.mozilla.org/en-US/firefox/addon/748">Greasemonkey</a>
+Userscript provides links under each
+<a href="http://perlmonks.org">PerlMonks</a> code block.  Code blocks
+can be inside PerlMonks posts.  The links below code blocks let you
+change the perl code to be source code highlighted, highlighted AND
+tidied, or switched back to the original.
+</p>
+
+<div class="head"><a name="SCREENSHOTS">SCREENSHOTS</a></div>
+
+<p>
+Here is an extreme before and after screenshot
+of <a href="http://www.perlmonks.org/?node_id=691530">an obfuscation
+on Perlmonks.</a>  The left is the original and the right is the
+tidied & highlighted version (duh).</p>
+
+<div>
+  <img src="before1.png" /><img src="after1.png" />
+</div>
+</p>
+
+<div class="head"><a name="CHANGES">CHANGES</a></div>
+
+<pre>
+  1.5 - Rewrote the user-script to use XML for sending requests and
+        receiving responses. The server was also rewritten using
+        <a href="http://mojolicio.us">Mojolicious::Lite</a>.
+</pre>
+
+<pre>
+  1.4.2 - Lately Greasemonkey was not reading the trigger websites,
+          title, or description of the script.  This was because
+          it didn't like C-style comments and I did!  Fixed.
+</pre>
+
+<div class="head"><a name="TODO">TODO</a></div>
+<p></p>
+
+<div class="subhead">(Efficiency)</div>
+
+<p>
+I want to change the userscript to send every codeblock on the page it
+can find to the CGI script all in one
+request.  <a href="http://search.cpan.org/dist/Perl-Tidy/">Perl::Tidy</a>
+takes a long time to load, takes a bit of memory, and is a little
+slow.  It slows things down a bunch on my funky old laptop.
+</p>
+
+<p>
+Doing everything in one request could help decrease the server load.
+Right now each codeblock is tidied using its own XMLRequest...
+Which spawns its own CGI process...
+</p>
+
+<p>
+I'm thinking using POE would be nice.  I tried making my own sort-of-
+asynchronous pipeline class, quickly got tired of it and remembered
+POE and how I've always wanted to try it.
+</p>
+
+<div class="subhead"><strike>(XML)</strike></div>
+
+<p>
+When I have time the new perl CGI script will deal only with XML.  I
+didn't realize it but I have been mixing HTML into XML and that was
+what was giving me problems.  Next time will only use CDATA stuff and
+report errors in XML, etc. It will also be backwards compatible with
+older UserScripts that do not send XML request.
+</p>
+
+<div class="head"><a name="SUPPORT">SUPPORT</a></div>
+
+<p>
+If this doesn't work for you and you want it, <i>/msg</i> <a href="http://www.perlmonks.org/?node_id=703550">juster</a> on
+PerlMonks, and I'll fix it.  I keep it working for me but maybe I
+broke it for you?
+</p>
+
+<p>
+<a href="#INSTALL">INSTALL</a>
+<a href="#SYNOPSIS">SYNOPSIS</a>
+<a href="#SCREENSHOTS">SCREENSHOTS</a>
+<a href="#CHANGES">CHANGES</a>
+<a href="#TODO">TODO</a>
+<a href="#SUPPORT">SUPPORT</a>
+<a href="#RANT">RANT</a>
+</p>
+
+</body>
+</html>
